@@ -1,5 +1,473 @@
-<html>
-  <body>
-    hello world
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>User Manual for Calculator Customized for Quantum Computation Equations</title>
+	<script src="https://unpkg.com/mathjs@10.5.3/lib/browser/math.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
+	<script src="calc.js"></script>
+	<script src="calc.num_to_latex.js"></script>
+</head>
+<body>
+
+<h1>User Manual for Calculator Customized for Quantum Computation Equations</h1>
+
+<h2>Table of Contents</h2>
+
+<a href="#intro">Introduction</a> <br>
+<a href="#howto">How to Use the Calculator</a> <br>
+<a href="#goto">Go to a Standalone Calculator</a> <br>
+<a href="#mathjs">It's all built on math.js</a> <br>
+<a href="#package">Why Didn't I Use [your favorite package]?</a> <br>
+<a href="#dirac">Dirac notation: ket bra braket ketbra</a> <br>
+<a href="#gateswna">Gates with No Angles: I X Y Z H S Sdg T Tdg SX SXdg SWAP</a> <br>
+<a href="#gateswa">Gates with Angles: P Rx Ry R U</a> <br>
+<a href="#gategen">Gate Generation: qc and perm</a> <br>
+<a href="#random">Random things: randomAngle and randomState</a> <br>
+<a href="#eq">Use eq() instead of ==</a> <br>
+<a href="#at">The @ operator</a> <br>
+<a href="#rounding">Rounding and Pretty Printing</a> <br>
+<a href="calc.test.html">Regression Tests</a> <br>
+
+<h3 id="intro">Introduction</h3>
+<p>
+Among the ways to use the calculator are 1) as a stand-alone (e.g.
+<a href="calc.html">this one</a>, and 2) as annotation for
+an html document (e.g. the manual you are now reading, and
+<a href="calc.test.html">regression tests for the calculator</a> <br>
+There are sets of equations throughout this manual, and clicking on the equations makes the input
+equations visible.  You can then edit them and see the results.  Like in a jupyter notebook,
+this encourages learning through experimenting.
+
+<p>
+Here's how this got started.
+When I read IBM's textbook
+<href="https://qiskit.org/textbook/preface.html">"Learn Quantum Computation using Qiskit"</a>,
+there was a simulator for experimenting with quantum computing, but there was no calculator
+to experiment with equations.  This is the calculator I wanted to be there.
+For example, if you look at 
+<a href="https://qiskit.org/textbook/ch-gates/phase-kickback.html#2.-Phase-Kickback-">this discussion of phase kickback</a>,
+you'll see these equations (I copied just the latex of the equations from the textbook):
+
+$$
+X|{-}\rangle = -|{-}\rangle
+$$
+
+$$
+\begin{aligned}
+\text{CNOT}|{-}0\rangle &amp; = |{-}\rangle \otimes |0\rangle \\
+                        &amp; = |{-}0\rangle \\
+                        \quad &amp; \\
+\text{CNOT}|{-}1\rangle &amp; = X|{-}\rangle \otimes |1\rangle \\
+                        &amp; = -|{-}\rangle \otimes |1\rangle \\
+                        &amp; = -|{-}1\rangle \\
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\text{CNOT}|{-}{+}\rangle &amp; = \tfrac{1}{\sqrt{2}}(\text{CNOT}|{-}0\rangle + \text{CNOT}|{-}1\rangle) \\
+                           &amp; = \tfrac{1}{\sqrt{2}}(|{-}0\rangle + X|{-}1\rangle) \\
+                           &amp; = \tfrac{1}{\sqrt{2}}(|{-}0\rangle -|{-}1\rangle) \\
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\text{CNOT}|{-}{+}\rangle &amp; = |{-}\rangle \otimes \tfrac{1}{\sqrt{2}}(|{0}\rangle - |1\rangle )\\
+                           &amp; = |{-}{-}\rangle \\
+\end{aligned}
+$$
+
+<p>
+Now compare them to mine:
+<div id='compare'></div> <script>createCalc('compare',`
+eq(X ket('-'),-ket('-'))
+CNOT = qc(2,X,'0>1');
+eq(CNOT, qc(2,X,'0>1'))
+eq(CNOT ket('-0'), ket('-')@ket('0'),
+  ket('-0'))
+eq(CNOT ket('-1'), X ket('-')@ket('1'),
+  -ket('-')@ket('1'),
+  -ket('-1'))
+eq(CNOT ket('-+'), 1/sqrt(2)*(CNOT ket('-0')+CNOT ket('-1')),
+  1/sqrt(2)*(ket('-0')+(X@I) ket('-1')),
+  1/sqrt(2)*(ket('-0')-ket('-1')))
+eq(CNOT ket('-+'), ket('-')@(1/sqrt(2)*(ket('0')-ket('1'))),
+  ket('--'))
+`)</script>
+
+<p>
+Other than the second equation, where I defined CNOT,
+my equations
+look quite similar to the ones from the textbook.  But mine are the output of my calculator.
+Click on the equations and you'll see the input. This allows you
+to experiment with the equations.  Plus there's a subtle but
+important difference&mdash;where the textbook has
+\(X|{-}1\rangle\), my associated equation has \((X \otimes I) |{-}1\rangle \).
+I don't know if that was a typo
+in the textbook, or if it's a case of "you know what we mean".
+What they meant was to apply the X to qubit 1 and not qubit 0.
+The calculator demands that you make that explicit, because
+it doesn't "know what you mean".  Executable equations keep you honest.
+
+<p>
+Continuing my sales pitch,
+below are identities from
+<a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html">section 2.4, More Circuit Identities</a>
+of the qiskit textbook.  
+This shows how well the calculator handles the equations.
+If you look carefully you'll find differences.
+These might have been typos in the textbook,
+or maybe I misunderstood what the textbook was trying to say.
+Part of the problem is it's not clear what to do with various fragments of circuits from the textbook.
+In the calculator the qc function, which replaces circuit descriptions, is integrated well
+with the rest of the calculator, so it's easy to do something unambiguous with the output of a circuit fragment.  Less confusion.
+
+<p>
+<a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#1.-Making-a-Controlled-Z-from-a-CNOT-">section 1. Making a Controlled-Z from a CNOT</a>
+
+<div id='more1'></div> <script>createCalc('more1',`
+eq(H X H, Z)
+eq(H Z H, X)
+eq(qc(2, Z, '0>1'),qc(2, H, '1', X, '0>1', H, '1'))
+eq(qc(2, Y, '0>1'),qc(2, S, '1', X, '0>1', Sdg, '1'))
+eq(qc(2, H, '0>1'),qc(2, Ry(-pi/4), '1', X, '0>1', Ry(pi/4), '1'))
+`)</script>
+
+<p>
+<a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#2.-Swapping-Qubits-">section 2. Swapping Qubits</a>
+
+<div id='more2'></div> <script>createCalc('more2',`
+eq(qc(2, X, '0>1', X, '1>0')ket('10'),ket('01'))
+eq(I@I, qc(2, X, '0>1', X, '1>0', X, '1>0', X, '0>1'))
+eq(SWAP, qc(2, X, '1>0', X, '0>1', X, '1>0'))
+eq(SWAP, qc(2, X, '0>1', X, '1>0', X, '0>1'))
+`)</script>
+
+<p>
+<a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#3.-Controlled-Rotations-">section 3. Controlled Rotations</a>
+
+<div id='more3'></div> <script>createCalc('more3',`
+theta = randomAngle()
+eq(qc(2, Ry(theta), '0>1'), qc(2, Ry(theta/2), '1', X, '0>1', Ry(-theta/2), '1', X, '0>1'))
+eq(qc(2, Rz(theta), '0>1'), qc(2, Rz(theta/2), '1', X, '0>1', Rz(-theta/2), '1', X, '0>1'))
+`)</script>
+
+<p>
+<a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#4.-The-Toffoli-">section 4. The Toffoli</a>
+
+<div id='more4'></div> <script>createCalc('more4',`
+eq(qc(3,X,'01>2'),qc(3,SX,'1>2',X,'0>1',SXdg,'1>2',X,'0>1',SX,'0>2'))
+eq(qc(3,X,'01>2'),qc(3,H,'2',X,'1>2',Tdg,'2',X,'0>2',T,'2',X,'1>2',Tdg,'2',
+  X,'0>2',T,'1',T,'2',H,'2',SWAP,'12',X,'0>2',T,'0',Tdg,'2',X,'0>2',SWAP,'12'))
+eq(qc(3,X,'01>2'),qc(3,H,'2',X,'1>2',Tdg,'2',X,'0>2',T,'2',X,'1>2',Tdg,'2',
+  X,'0>2',T,'1',T,'2',H,'2',X,'0>1',T,'0',Tdg,'1',X,'0>1'))
+s = randomState()
+eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(s@ket('00')),s@ket('00'))
+eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(s@ket('11')),(X s)@ket('11'))
+eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(s@ket('01')),s@ket('01'))
+eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(s@ket('10')),(Z s)@ket('10'))
+`)</script>
+
+<p>
+The last four equations demonstrate how the almost-CCX gate
+applies an X to the target when the controls are 11,
+does nothing when they're 00 or 01, and 
+applies a Z when 10, which, as the textbook says, "only induces a relative phase".
+
+<h3 id="howto">How to Use the Calculator</h3>
+<p>
+There are two sections to each calculator. First the textarea for editing equations, then the results rendered with latex.
+If only the latex results are visible, click on the results to make the textarea visible.
+
+<p>
+When the textarea is visible, there are buttons between the textarea and the results.
+Here's what they do:
+
+<p>
+The "parenthesis" radio button selects "keep", "auto", or "all".
+See <a href="https://mathjs.org/docs/expressions/customization.html#parenthesis">the "parenthesis" section of the math.js manual</a>
+for an explanation of the options.
+
+<p>
+The "implicit" radio button selects "hide" or "show".
+See <a href="https://mathjs.org/docs/expressions/customization.html#implicit-multiplication">the "implicit" section of the math.js manual</a>
+for an explanation of the options.
+
+<p>
+Or maybe you prefer this explanation of the parenthesis and implicit options:
+
+<div id="opteg"></div> <script>createCalc('opteg',"(3+4)+5+6\nX Y")</script>
+
+<p>
+Click on the equations to get the textarea and buttons.  Note that the default for parenthesis is "keep", and it's
+leaving the equation unchanged from how it's entered in the textarea.  Click on "auto" and it removes the
+unnecessary parens.  Click on "all" and it puts in parentheses everywhere it can.  Moving on to implicit,
+note that the default is hide, and it's hiding the implicit multiplication.  Click on "show" and it
+shows the multiplication explicitly.
+
+<p>
+The "Re-evaluate" button does just that, re-evaluates the equations.  It's unnecessary unless you've used the randomQubit or randomState function,
+in which case you get new random values.
+
+<p>
+The "User Manual" button opens the user manual in a new tab.  Nice for checking on some function
+detail when you're in the middle of entering an equation.  Perhaps silly if you're already
+in the user manual, like you are now.
+
+<p>
+A note on not bricking your browser: The calculator can handle computations with matrices
+large enough that their latex rendering gets painfully slow.
+The example below shows such matrices.  You probably don't want to display one of those 6-qubit 
+results.  Click on the equations to see the original textarea and you'll see how I avoid that.
+One way is to use the matrices inside an expression for which the result is not a huge matrix,
+like the first and last lines in the example.
+If you want to assign a huge matrix to a variable, you can put a 
+<a href="https://mathjs.org/docs/expressions/syntax.html#multiline-expressions">semicolon at the end of an assignment</a>,
+and that tells the calculator not to display the
+assignment.  The combination of "a=expr;eq(a,expr)" lets you effectively see the assignment
+in the form of an eq(), which shows how the matrix is built without displaying it.
+
+
+<div id="bigeg"></div> <script>createCalc('bigeg',`
+eq(I@I@I@I@I@I,(X@X@X@X@X@X)(X@X@X@X@X@X))
+eyes = I@I@I@I@I@I;
+eq(eyes,I@I@I@I@I@I)
+eggs = X@X@X@X@X@X;
+eq(eggs,X@X@X@X@X@X)
+eq(eyes,eggs eggs)
+`)</script>
+
+<h3 id="goto">Go to a Standalone Calculator</h3>
+
+<p>
+<a href="calc.html">Click here to go to a standalone calculator</a> <br>
+
+<p>
+There's no difference between the standalone calculator linked to above,
+and all the calculators in this manual, other than there's just one in
+the standalone, and it has no initial equations in the textarea.
+These files can be templates for how to setup calculators for yourself.
+
+<h3 id="mathjs">It's all built on math.js</h3>
+
+<p>
+<a href="https://mathjs.org">math.js</a> is a basic calculation engine with hooks for customizing.
+So I customized it, mostly by adding the functions, and one operator, listed in the table of contents, above.
+Other than for my customization, see <a href="https://mathjs.org">math.js</a> for all documentation.
+
+<p>
+While I'm doling out credit, <a href="https://www.mathjax.org">mathjax.org</a> renders all the LaTeX.
+Also, <a href="https://qiskit.org">qiskit</a> was the inspiration for this calculator,
+and I use a modified version of the qiskit number pretty-printer.
+
+<h3 id="package">Why Didn't I Use [your favorite package]?</h3>
+
+<p>
+Maybe I didn't know about it, or I tried it and it was too slow, or it required sacrificing some
+functionality that I didn't want to lose, or it wasn't open source.  I really wanted to
+use Jupyter because I love the Jupyter notebook approach, but using Jupyter meant (you!) having to
+install stuff, and it doesn't seem to have a way to hide the inputs (just the outputs), which
+would mean this manual would be messier.  JupyterLite has hide all inputs, although it replaces
+them with elipses.  Not too bad.  But JupyterLite has some problems, including that it's not an
+official project at the time of this writing.  Yikes!  Anyway, that's the kind of agonizing I
+went through when choosing what packages to use.
+
+<h3 id="dirac">Dirac Notation</h3>
+
+<p>
+Probably best just to show examples:
+
+<div id="dirnoteg"></div> <script>createCalc('dirnoteg',"ket('0+')\nbra('-0')\nbraket('01','01')\nketbra('01','01')")</script>
+
+<p>
+The args are strings (e.g. '01' or "01").  The qubits of the arg are 0's, 1's, +'s, and -'s.
+
+<h3 id="gateswna">Gates with No Angles</h3>
+
+<p>
+Probably best just to show them all:
+
+<div id="gnaeg"></div> <script>createCalc('gnaeg',"I\nX\nY\nZ\nH\nS\nSdg\nT\nTdg\nSX\nSXdg\nSWAP")</script>
+<p>
+The gates without angles are actually constants rather than functions.
+If they were functions you'd have to add "()" to their names.
+Nobody wants that.
+
+<h3 id="gateswa">Gates with Angles</h3>
+
+<p>
+Probably best just to show examples:
+
+<div id="gwaeg"></div> <script>createCalc('gwaeg',"theta=pi/2\nphi=pi/3\nlambda=pi/4\nP(theta)\nRx(theta)\nRy(theta)\nRz(theta)\nR(theta,phi)\nU(theta,phi,lambda)\n")</script>
+
+<p>
+If you're puzzled about what's going on with the angle names,
+it turns out math.js turns variables that are names of Greek letters into a latex
+rendering of the letter.  How cool is that?
+I haven't found any mention of it in their manual.
+I only discovered it because I was going to add a wrapper
+to make that happen, and typed in a test case before coding
+it, and discovered it was already working.
+
+<h3 id="gategen">Gate Generation: qc</h3>
+<p>
+qc() can generate a gate similarly to how one does with the simulator in qiskit.
+You're building a result gate with one or more internal gates.
+qc() also lets you specify any number of control qubits for the internal gates.
+For example:
+
+<div id="qceg"></div> <script>createCalc('qceg',`
+CNOT1 = qc(2,X,'0>1');
+eq(CNOT1, qc(2,X,'0>1'))
+CNOT2 = qc(2,X,'1>0');
+eq(CNOT2, qc(2,X,'1>0'))
+eq(qc(2,H,'0',H,'1',CNOT1,'01',H,'0',H,'1'), CNOT2)
+eq(qc(2,H,'0',H,'1',CNOT2,'01',H,'0',H,'1'), CNOT1)
+eq(qc(3,X,'0',Y,'1',Z,'2'), Z@Y@X)
+eq(qc(2,Rx(pi/2),'0'), I@Rx(pi/2))
+eq(qc(2,SWAP,'01',X,'0',Y,'1',SWAP,'01'), X@Y)
+`)</script>
+
+<p>
+The first arg of qc is the number of qubits.  The rest of the args come in pairs,
+the first defining the internal gate and the second defining the control and target qubits
+for the internal gate.  The control and target qubits are specified with a string
+(e.g. '01' or "01")
+The qubits are either all target qubits, or control qubits and target qubits separated by a '>'.
+The number of target qubits must match the number of qubits in the internal gate,
+and they must be sequential and ascending. (Yes, I considered allowing
+non-consequtive target qubits, and in any order, but I couldn't come up with a clean
+way to represent it in the display for qc().
+Use the <a href='#perm'>perm() gate</a>.)
+The target qubits are required.
+There can be 0 or more control qubits.  This limits you to a ten-qubit
+result gate.  I don't think you want to have more than that.
+
+<p>
+The gate isn't limited to internal gates without angles, like X.  It could be Rx(pi/2),
+as you see in the examples.  You could also build a gate and put it in a variable
+and use that as an internal gate, as you see in the examples.
+
+<p>
+The display shows each internal gate in a column, with the name of the internal gate in its target row(s),
+'c' in its control rows, if there are any, and the rest are '-'.
+The qc display is bracketed by curly brackets.  Square brackets make it look too much like a matrix,
+and straight brackets (pipes) make it look like a magnitude.
+
+<p>
+The first two examples show CNOT1 and CNOT2 defined, the two forms of a controlled-X, one
+with the control qubit on 0, and the other with the control qubit on 1.
+The next two examples show how you can surround each with H's to get the other.
+The 3-qubit example compares \(Z \otimes Y \otimes X \) to building it with qc().
+Next, there's an example of using an internal gate with an angle.
+Finally, there's surrounding \(Y \otimes X \) with SWAPs to get \(X \otimes Y \).
+
+<h3 id="perm">Gate Generation: perm</h3>
+
+<p>
+The perm gate permutes the qubits.
+The arg is a string listing qubits in the new order,
+so '012' is no change, and '021' leaves one unchanged and swaps the other two.
+Here are the equivalences for all the 2-qubit perms:
+
+<div id="permeg1"></div> <script>createCalc('permeg1',`
+eq(perm('01'),I@I)
+eq(perm('10'),SWAP)
+`)</script>
+
+<p>
+Here are the equivalences for all the 3-qubit perms:
+
+<div id="permeg2"></div> <script>createCalc('permeg2',`
+eq(perm('012'),I@I@I)
+eq(perm('021'),I@SWAP)
+eq(perm('102'),SWAP@I)
+eq(perm('120'),(I@SWAP)(SWAP@I))
+eq(perm('201'),(SWAP@I)(I@SWAP))
+eq(perm('210'),(I@SWAP)(SWAP@I)(I@SWAP))
+`)</script>
+
+<p>
+Here we see that not changing the order of the qubits
+is the identity, as is reversing the order twice
+and rotating three times:
+
+<div id="permeg3"></div> <script>createCalc('permeg3',`
+eq(
+    I@I@I,
+    perm('012'),
+    perm('210')perm('210'),
+    perm('120')perm('120')perm('120'))
+`)</script>
+
+<h3 id="random">Random things: randomAngle and randomState</h3>
+
+<p>
+The "randomAngle()" function generates a random angle between \(-2\pi\) and \(2\pi\), and the "randomQubit()" function generates a random
+qubit, normalized so the sum of the squares of the states is 1.  I would like
+to include symbolic evaluation and simplification, but it's not trivial, so
+in the meantime a trivial way to test an equivalence with some level
+of assurance is with random values, for example:
+
+<div id="randomeg"></div> <script>createCalc('randomeg',`
+alpha = randomAngle()\nomega=randomAngle()
+eq(I,Rx(alpha)*Ry(omega)*Ry(-omega)*Rx(-alpha))
+eq(I,Rx(alpha)*Ry(omega)*Rx(-alpha)*Ry(-omega))
+Psi = randomState()
+P0 = abs(bra('0')Psi)^2
+P1 = abs(bra('1')Psi)^2
+P0+P1
+`)</script>
+
+<p>
+Click on the results to make the textarea and buttons visible, then click in the Re-evaluate button to evaluate with
+new values for \(\alpha\), \(\omega\), and \(\Psi\), and therefore another test of the equivalences.  Not the formal verification you
+can get with symbolic evaluation, but, as I said, some level of assurance.
+
+<h3 id="eq">Use eq() instead of ==</h3>
+
+<p>
+When comparing matrices, the == operator in math.js returns a matrix with a 1 where
+they're equal, and 0 where not.  That's no fun if all you want is "true" or "false".  So the eq() function turns that
+into true iff all elements are 1.  Further, math.js has some behavior that I didn't
+think we want in our context, so I changed that.  Finally, math.js may not do
+what you want when you say "a==b==c".  Use eq(a,b,c).  Examples:
+
+<div id="eqeg"></div> <script>createCalc('eqeg','I == H H\neq(I,H H,S Sdg)')</script>
+
+<p>
+In the examples you see how == returns a matrix of element-by-element comparison results.
+And you see a comparison of three values.  Plus you see the line breaks added to
+make a comparison of several elements more readable, like in the introduction at the
+beginning of this manual.
+
+<h3 id="at">The @ operator</h3>
+
+<p>
+I got tired of typing in the kron() function.  I wanted an operator.  I repurposed the .* operator, which
+had the right precedence, felt kinda like \( \otimes \), and I hoped it wouldn't be missed too much.
+So a.*b turns into kron(a,b).  Except I didn't like typing two letters, particularly those two.
+So you type @ into the textarea equations, that gets turned into .* before parsing, then I intercept the .* function at evaluation
+time and substitute kron().  And of course display it as \( \otimes \).
+It may seem like a lot of bother, but \( \otimes \) is such an important and frequently-used operator
+that I figured it was worth it.
+
+<h3 id="rounding">Rounding and Pretty Printing</h3>
+
+<p>
+Quantum computing gates often look messy when their values are printed because it's not
+unusual to have something like \(\frac{1}{\sqrt{2}}\) as a factor.  So results
+are "pretty-printed" by looking for common factors like \(\frac{1}{\sqrt{2}}\).  Calculations
+are not performed symbolicly, so results that "should" be integers can be slightly off.
+The pretty-printer rounds to integers when they're within \(10^{-14}\).
+(eq() also returns true when numbers are within \(10^{-14}\).)
+The pretty-printer also looks for a fraction whose numerator and denominator add to less
+than twenty.
+When the printer fails to find something "nice", it prints a floating point number with
+five digits of precision.
+
+</body>
 </html>
