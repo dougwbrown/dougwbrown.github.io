@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<script src="https://unpkg.com/mathjs@10.5.3/lib/browser/math.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
+	<script src="calc.js"></script>
+	<script src="calc.num_to_latex.js"></script>
+	<title>Regression Tests for Calculator Customized for Quantum Computation Equations</title>
+</head>
+<body>
+
+<h1>Regression Tests for Calculator Customized for Quantum Computation Equations</h1>
+
+<h2>Table of Contents</h2>
+
+<a href="#intro">Introduction</a> <br>
+<a href="#gates">Gates</a> <br>
+<a href="#dirac">Dirac Notation</a> <br>
+<a href="#perm">perm</a> <br>
+<a href="#qc">qc</a> <br>
+
+<h3 id="intro">Introduction</h3>
+<p>
+Here I only test the functions I added on top of math.js, because I'm assuming math.js is ok.
+I use the assert function, which acts just like eq when things are equal, but
+throws an error when they aren't, so it's easy to catch a failure.
+
+<p>
+Besides acting as regression tests, they're also examples of how to use the functions.
+
+<h3 id="gates">Gates</h3>
+<p>
+The goal is for the descriptions here to be more easily visually verifiable
+than in the javascript code.
+
+<p>
+Some of these are a function of one to three angles (because no symbolic
+evaluation available.)  I generate random angles to verify.
+If you want to try different angles, you can click on the visible equations
+to get the buttons, then click on Re-evaluate to get new random values.
+
+<p>
+
+<div id="gatetests"></div> <script> createCalc('gatetests', `
+theta = randomAngle()
+phi = randomAngle()
+lambda = randomAngle()
+assert(I,ketbra('0','0')+ketbra('1','1'))
+assert(X,ketbra('1','0')+ketbra('0','1'))
+assert(Y,i ketbra('1','0')-i ketbra('0','1'))
+assert(Z,ketbra('0','0')-ketbra('1','1'))
+assert(H,U(pi/2,0,pi))
+assert(S S,Z)
+assert(Sdg,conj(S))
+assert(T T,S)
+assert(Tdg,conj(T))
+assert(SX SX,X)
+assert(SXdg,conj(SX))
+assert(SWAP, ketbra('00','00')+ketbra('01','10')+ketbra('10','01')+ketbra('11','11'))
+assert(P(lambda),U(0,0,lambda))
+assert(Rx(theta),U(theta,-pi/2,pi/2))
+assert(Ry(theta),U(theta,0,0))
+assert(Rz(phi),e^(-i phi/2)U(0,phi,0))
+assert(R(theta,phi), U(theta,phi-pi/2,-phi+pi/2))
+assert(U(theta,phi,lambda), [[cos(theta/2),-e^(i*lambda)sin(theta/2)],[e^(i*phi)sin(theta/2), e^(i*(phi+lambda))cos(theta/2)]])
+`) </script>
+
+<h3 id="dirac">Dirac Notation</h3>
+<p>
+
+First we test \(\left|  \Psi \right\rangle\).
+
+<div id="diractests"></div> <script> createCalc('diractests', `
+assert(ket('0'),[[1],[0]])
+assert(ket('1'),[[0],[1]])
+assert(ket('+'),H ket('0'))
+assert(ket('-'),H ket('1'))
+assert(ket('01+-'),ket('0')@ket('1')@ket('+')@ket('-'))
+assert(ket('1-0+'),ket('1')@ket('-')@ket('0')@ket('+'))
+`) </script>
+
+<p>
+Then we verify the others.  They're defined like this,
+as functions of ket, in the code,
+but at least this is more visually verifiable.
+
+<div id="diractests2"></div> <script> createCalc('diractests2', `
+assert(bra('0'),transpose(ket('0')))
+assert(bra('1'),transpose(ket('1')))
+assert(bra('+'),transpose(ket('+')))
+assert(bra('-'),transpose(ket('-')))
+assert(bra('01+-'),transpose(ket('0')@ket('1')@ket('+')@ket('-')))
+assert(bra('1-0+'),transpose(ket('1')@ket('-')@ket('0')@ket('+')))
+assert(braket('01+-','1-0+'),bra('01+-')ket('1-0+'))
+assert(ketbra('01+-','1-0+'),ket('01+-')bra('1-0+'))
+`) </script>
+
+<h3 id="perm">perm</h3>
+<p>
+
+Define three unique states and use them to test if they're routed by perm as expected for all the permutations of three qubits.
+
+<div id="permtests"></div> <script> createCalc('permtests', `
+s0 = [[1.0],[1.0]];
+s1 = [[1.1],[1.1]];
+s2 = [[1.2],[1.2]];
+assert(perm('012')(s0@s1@s2), s0@s1@s2)
+assert(perm('021')(s0@s1@s2), s0@s2@s1)
+assert(perm('102')(s0@s1@s2), s1@s0@s2)
+assert(perm('120')(s0@s1@s2), s1@s2@s0)
+assert(perm('201')(s0@s1@s2), s2@s0@s1)
+assert(perm('210')(s0@s1@s2), s2@s1@s0)
+`) </script>
+
+<h3 id="qc">qc</h3>
+<p>
+First let's make sure qc puts the internal gates in the right place.
+
+<div id="qctests1"></div> <script> createCalc('qctests1', `
+assert(qc(3,X,'0',Y,'1',Z,'2'),Z@Y@X)
+assert(qc(3,X,'0',Y,'2',Z,'1'),Y@Z@X)
+assert(qc(3,X,'1',Y,'0',Z,'2'),Z@X@Y)
+assert(qc(3,X,'1',Y,'2',Z,'0'),Y@X@Z)
+assert(qc(3,X,'2',Y,'0',Z,'1'),X@Z@Y)
+assert(qc(3,X,'2',Y,'1',Z,'0'),X@Y@Z)
+`) </script>
+
+<p>
+Then how about if there is a 2-qubit internal gate involved.
+
+<div id="qctests2"></div> <script> createCalc('qctests2', `
+assert(qc(4,X,'0',Y,'1',Z@H,'23'),Z@H@Y@X)
+assert(qc(4,X,'0',Y,'3',Z@H,'12'),Y@Z@H@X)
+assert(qc(4,X,'1',Y,'0',Z@H,'23'),Z@H@X@Y)
+assert(qc(4,X,'2',Y,'3',Z@H,'01'),Y@X@Z@H)
+assert(qc(4,X,'3',Y,'0',Z@H,'12'),X@Z@H@Y)
+assert(qc(4,X,'3',Y,'2',Z@H,'01'),X@Y@Z@H)
+`) </script>
+
+<p>
+And now test to see if control gates are working under a few conditions.
+
+<div id="qctests3"></div> <script> createCalc('qctests3', `
+assert(qc(2,X,'1>0')(ket('00')),ket('00'))
+assert(qc(2,X,'1>0')(ket('01')),ket('01'))
+assert(qc(2,X,'1>0')(ket('10')),ket('11'))
+assert(qc(2,X,'1>0')(ket('11')),ket('10'))
+assert(qc(4,X@X,'23>01')(ket('0000')),ket('0000'))
+assert(qc(4,X@X,'23>01')(ket('0001')),ket('0001'))
+assert(qc(4,X@X,'23>01')(ket('0010')),ket('0010'))
+assert(qc(4,X@X,'23>01')(ket('0011')),ket('0011'))
+assert(qc(4,X@X,'23>01')(ket('0100')),ket('0100'))
+assert(qc(4,X@X,'23>01')(ket('0101')),ket('0101'))
+assert(qc(4,X@X,'23>01')(ket('0110')),ket('0110'))
+assert(qc(4,X@X,'23>01')(ket('0111')),ket('0111'))
+assert(qc(4,X@X,'23>01')(ket('1000')),ket('1000'))
+assert(qc(4,X@X,'23>01')(ket('1001')),ket('1001'))
+assert(qc(4,X@X,'23>01')(ket('1010')),ket('1010'))
+assert(qc(4,X@X,'23>01')(ket('1011')),ket('1011'))
+assert(qc(4,X@X,'23>01')(ket('1100')),ket('1111'))
+assert(qc(4,X@X,'23>01')(ket('1101')),ket('1110'))
+assert(qc(4,X@X,'23>01')(ket('1110')),ket('1101'))
+assert(qc(4,X@X,'23>01')(ket('1111')),ket('1100'))
+`) </script>
+
+<p>
+Or we can build some controlled gates.
+
+<div id="qctests4"></div> <script> createCalc('qctests4', `
+assert(qc(2,Y,'1>0'),ketbra('0','0')@I+ketbra('1','1')@Y)
+assert(qc(2,Z,'0>1'),I@ketbra('0','0')+Z@ketbra('1','1'))
+assert(qc(4,S@T,'23>01'),ketbra('00','00')@I@I+ketbra('01','01')@I@I+ketbra('10','10')@I@I+ketbra('11','11')@S@T)
+`) </script>
+
+</body>
+</html>
