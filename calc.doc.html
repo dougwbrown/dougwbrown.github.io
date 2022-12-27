@@ -23,7 +23,7 @@
 <a href="#dirac">Dirac notation: ket bra braket ketbra</a> <br>
 <a href="#gateswna">Gates with No Angles: I X Y Z H S Sdg T Tdg SX SXdg SWAP</a> <br>
 <a href="#gateswa">Gates with Angles: P Rx Ry R U</a> <br>
-<a href="#gategen">Gate Generation: qc and perm</a> <br>
+<a href="#gategen">Gate Generation: qcc, qc, and perm</a> <br>
 <a href="#random">Random things: randomAngle and randomState</a> <br>
 <a href="#eq">Use eq() instead of ==</a> <br>
 <a href="#at">The @ operator</a> <br>
@@ -33,9 +33,10 @@
 <h3 id="intro">Introduction</h3>
 <p>
 Among the ways to use the calculator are 1) as a stand-alone (e.g.
-<a href="calc.html">this one</a>, and 2) as annotation for
+<a href="calc.html">this one</a>), and 2) as annotation for
 an html document (e.g. the manual you are now reading, and
-<a href="calc.test.html">regression tests for the calculator</a> <br>
+<a href="calc.test.html">regression tests for the calculator</a>).
+<br>
 There are sets of equations throughout this manual, and clicking on the equations makes the input
 equations visible.  You can then edit them and see the results.  Like in a jupyter notebook,
 this encourages learning through experimenting.
@@ -84,8 +85,8 @@ $$
 Now compare them to mine:
 <div id='compare'></div> <script>createCalc('compare',`
 eq(X ket('-'),-ket('-'))
-CNOT = qc(2,X,'0>1');
-eq(CNOT, qc(2,X,'0>1'))
+CNOT = qcc(2,X,'0>1');
+eq(CNOT, qcc(2,X,'0>1'))
 eq(CNOT ket('-0'), ket('-')@ket('0'),
   ket('-0'))
 eq(CNOT ket('-1'), X ket('-')@ket('1'),
@@ -118,12 +119,6 @@ below are identities from
 <a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html">section 2.4, More Circuit Identities</a>
 of the qiskit textbook.  
 This shows how well the calculator handles the equations.
-If you look carefully you'll find differences.
-These might have been typos in the textbook,
-or maybe I misunderstood what the textbook was trying to say.
-Part of the problem is it's not clear what to do with various fragments of circuits from the textbook.
-In the calculator the qc function, which replaces circuit descriptions, is integrated well
-with the rest of the calculator, so it's easy to do something unambiguous with the output of a circuit fragment.  Less confusion.
 
 <p>
 <a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#1.-Making-a-Controlled-Z-from-a-CNOT-">section 1. Making a Controlled-Z from a CNOT</a>
@@ -131,19 +126,19 @@ with the rest of the calculator, so it's easy to do something unambiguous with t
 <div id='more1'></div> <script>createCalc('more1',`
 eq(H X H, Z)
 eq(H Z H, X)
-eq(qc(2, Z, '0>1'),qc(2, H, '1', X, '0>1', H, '1'))
-eq(qc(2, Y, '0>1'),qc(2, S, '1', X, '0>1', Sdg, '1'))
-eq(qc(2, H, '0>1'),qc(2, Ry(-pi/4), '1', X, '0>1', Ry(pi/4), '1'))
+eq(qcc(2, Z, '0>1'),qcc(2, H, '1', X, '0>1', H, '1'))
+eq(qcc(2, Y, '0>1'),qcc(2, Sdg, '1', X, '0>1', S, '1'))
+eq(qcc(2, H, '0>1'),qcc(2, Ry(pi/4), '1', X, '0>1', Ry(-pi/4), '1'))
 `)</script>
 
 <p>
 <a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#2.-Swapping-Qubits-">section 2. Swapping Qubits</a>
 
 <div id='more2'></div> <script>createCalc('more2',`
-eq(qc(2, X, '0>1', X, '1>0')ket('10'),ket('01'))
-eq(I@I, qc(2, X, '0>1', X, '1>0', X, '1>0', X, '0>1'))
-eq(SWAP, qc(2, X, '1>0', X, '0>1', X, '1>0'))
-eq(SWAP, qc(2, X, '0>1', X, '1>0', X, '0>1'))
+eq(qcc(2, X, '0>1', X, '1>0')ket('01'),ket('10'))
+eq(I@I, qcc(2, X, '0>1', X, '1>0', X, '1>0', X, '0>1'))
+eq(SWAP, qcc(2, X, '1>0', X, '0>1', X, '1>0'))
+eq(SWAP, qcc(2, X, '0>1', X, '1>0', X, '0>1'))
 `)</script>
 
 <p>
@@ -151,24 +146,25 @@ eq(SWAP, qc(2, X, '0>1', X, '1>0', X, '0>1'))
 
 <div id='more3'></div> <script>createCalc('more3',`
 theta = randomAngle()
-eq(qc(2, Ry(theta), '0>1'), qc(2, Ry(theta/2), '1', X, '0>1', Ry(-theta/2), '1', X, '0>1'))
-eq(qc(2, Rz(theta), '0>1'), qc(2, Rz(theta/2), '1', X, '0>1', Rz(-theta/2), '1', X, '0>1'))
+eq(qcc(2, Ry(theta), '0>1'), qcc(2, Ry(theta/2), '1', X, '0>1', Ry(-theta/2), '1', X, '0>1'))
+eq(qcc(2, Rz(theta), '0>1'), qcc(2, Rz(theta/2), '1', X, '0>1', Rz(-theta/2), '1', X, '0>1'))
 `)</script>
 
 <p>
 <a href="https://qiskit.org/textbook/ch-gates/more-circuit-identities.html#4.-The-Toffoli-">section 4. The Toffoli</a>
 
 <div id='more4'></div> <script>createCalc('more4',`
-eq(qc(3,X,'01>2'),qc(3,SX,'1>2',X,'0>1',SXdg,'1>2',X,'0>1',SX,'0>2'))
-eq(qc(3,X,'01>2'),qc(3,H,'2',X,'1>2',Tdg,'2',X,'0>2',T,'2',X,'1>2',Tdg,'2',
+
+eq(qcc(3,X,'01>2'),qcc(3,SX,'1>2',X,'0>1',SXdg,'1>2',X,'0>1',SX,'0>2'))
+eq(qcc(3,X,'01>2'),qcc(3,H,'2',X,'1>2',Tdg,'2',X,'0>2',T,'2',X,'1>2',Tdg,'2',
   X,'0>2',T,'1',T,'2',H,'2',SWAP,'12',X,'0>2',T,'0',Tdg,'2',X,'0>2',SWAP,'12'))
-eq(qc(3,X,'01>2'),qc(3,H,'2',X,'1>2',Tdg,'2',X,'0>2',T,'2',X,'1>2',Tdg,'2',
+eq(qcc(3,X,'01>2'),qcc(3,H,'2',X,'1>2',Tdg,'2',X,'0>2',T,'2',X,'1>2',Tdg,'2',
   X,'0>2',T,'1',T,'2',H,'2',X,'0>1',T,'0',Tdg,'1',X,'0>1'))
 Psi = randomState()
-eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('00')),Psi@ket('00'))
-eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('11')),(X Psi)@ket('11'))
-eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('01')),Psi@ket('01'))
-eq(qc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('10')),(Z Psi)@ket('10'))
+eq(qcc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('00')),Psi@ket('00'))
+eq(qcc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('11')),(X Psi)@ket('11'))
+eq(qcc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('01')),Psi@ket('01'))
+eq(qcc(3,H,'0>2',Z,'1>2',H,'0>2')(Psi@ket('10')),(Z Psi)@ket('10'))
 `)</script>
 
 <p>
@@ -312,27 +308,27 @@ I only discovered it because I was going to add a wrapper
 to make that happen, and typed in a test case before coding
 it, and discovered it was already working.
 
-<h3 id="gategen">Gate Generation: qc</h3>
+<h3 id="gategen">Gate Generation: qcc</h3>
 <p>
-qc() can generate a gate similarly to how one does with the simulator in qiskit.
+qcc() can generate a gate similarly to how one does with the simulator in qiskit.
 You're building a result gate with one or more internal gates.
-qc() also lets you specify any number of control qubits for the internal gates.
+qcc() also lets you specify any number of control qubits for the internal gates.
 For example:
 
-<div id="qceg"></div> <script>createCalc('qceg',`
-CNOT1 = qc(2,X,'0>1');
-eq(CNOT1, qc(2,X,'0>1'))
-CNOT2 = qc(2,X,'1>0');
-eq(CNOT2, qc(2,X,'1>0'))
-eq(qc(2,H,'0',H,'1',CNOT1,'01',H,'0',H,'1'), CNOT2)
-eq(qc(2,H,'0',H,'1',CNOT2,'01',H,'0',H,'1'), CNOT1)
-eq(qc(3,X,'0',Y,'1',Z,'2'), Z@Y@X)
-eq(qc(2,Rx(pi/2),'0'), I@Rx(pi/2))
-eq(qc(2,SWAP,'01',X,'0',Y,'1',SWAP,'01'), X@Y)
+<div id="qcceg"></div> <script>createCalc('qcceg',`
+CNOT1 = qcc(2,X,'0>1');
+eq(CNOT1, qcc(2,X,'0>1'))
+CNOT2 = qcc(2,X,'1>0');
+eq(CNOT2, qcc(2,X,'1>0'))
+eq(qcc(2,H,'0',H,'1',CNOT1,'01',H,'0',H,'1'), CNOT2)
+eq(qcc(2,H,'0',H,'1',CNOT2,'01',H,'0',H,'1'), CNOT1)
+eq(qcc(3,X,'0',Y,'1',Z,'2'), Z@Y@X)
+eq(qcc(2,Rx(pi/2),'0'), I@Rx(pi/2))
+eq(qcc(2,SWAP,'01',X,'0',Y,'1',SWAP,'01'), X@Y)
 `)</script>
 
 <p>
-The first arg of qc is the number of qubits.  The rest of the args come in pairs,
+The first arg of qcc is the number of qubits.  The rest of the args come in pairs,
 the first defining the internal gate and the second defining the control and target qubits
 for the internal gate.  The control and target qubits are specified with a string
 (e.g. '01' or "01")
@@ -340,7 +336,7 @@ The qubits are either all target qubits, or control qubits and target qubits sep
 The number of target qubits must match the number of qubits in the internal gate,
 and they must be sequential and ascending. (Yes, I considered allowing
 non-consequtive target qubits, and in any order, but I couldn't come up with a clean
-way to represent it in the display for qc().
+way to represent it in the display for qcc().
 Use the <a href='#perm'>perm() gate</a>.)
 The target qubits are required.
 There can be 0 or more control qubits.  This limits you to a ten-qubit
@@ -354,16 +350,33 @@ and use that as an internal gate, as you see in the examples.
 <p>
 The display shows each internal gate in a column, with the name of the internal gate in its target row(s),
 'c' in its control rows, if there are any, and the rest are '-'.
-The qc display is bracketed by curly brackets.  Square brackets make it look too much like a matrix,
+The qcc display is bracketed by curly brackets.  Square brackets make it look too much like a matrix,
 and straight brackets (pipes) make it look like a magnitude.
 
 <p>
 The first two examples show CNOT1 and CNOT2 defined, the two forms of a controlled-X, one
 with the control qubit on 0, and the other with the control qubit on 1.
 The next two examples show how you can surround each with H's to get the other.
-The 3-qubit example compares \(Z \otimes Y \otimes X \) to building it with qc().
+The 3-qubit example compares \(Z \otimes Y \otimes X \) to building it with qcc().
 Next, there's an example of using an internal gate with an angle.
 Finally, there's surrounding \(Y \otimes X \) with SWAPs to get \(X \otimes Y \).
+
+<h3 id="gategen">Gate Generation: qc</h3>
+<p>
+
+I messed up.  I made qc() multiply the gates from left to right.  To make it look like
+the circuits in qiskit, it has to multiply from right to left.  I left qc() unchanged for
+backward compatibility, and added qcc(), which stands for qc-corrected.  Take a look:
+
+<div id="qceg"></div> <script>createCalc('qceg',`
+eq(qc(1,X,'0',Y,'0',Z,'0'),X*Y*Z)
+eq(qcc(1,X,'0',Y,'0',Z,'0'),Z*Y*X)
+`)</script>
+
+<p>
+The first two show the ordering.
+Note that it draws qc() and qcc() the same, so you 
+have to look at the source equations to see that the first line is qc() and the second is qcc().
 
 <h3 id="perm">Gate Generation: perm</h3>
 
