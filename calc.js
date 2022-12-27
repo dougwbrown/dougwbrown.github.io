@@ -162,14 +162,22 @@ function perm(arg) {
 }
 
 function qc(args0, math, scope) {
-	if (args0.length < 1 || args0.length % 2 == 0) throw "wrong number of arguments for function qc"
+	return qc1(args0, math, scope, 'qc')
+}
+
+function qcc(args0, math, scope) {
+	return qc1(args0, math, scope, 'qcc')
+}
+
+function qc1(args0, math, scope, which) {
+	if (args0.length < 1 || args0.length % 2 == 0) throw "wrong number of arguments for function " + which
 	args = args0.map(arg => arg.evaluate(scope))
 	let qubits = args[0]
 	args0[0].qcHack= qubits
-	let r = math.identity(2**qubits)
+	let ms = []
 	for (let i = 1; i < args.length; i+=2) {
 		let U = args[i]
-		if (scalar(U)) throw "bad gate in qc: " + U
+		if (scalar(U)) throw "bad gate in " + which + ": " + U
 		if (!args[i+1].match(/^(\d+>)?\d+$/)) throw "bad syntax for control/targets: " + args[i+1]
 		let ct = args[i+1].split('>')
 		let controls
@@ -191,7 +199,19 @@ function qc(args0, math, scope) {
 		}
 		args0[i+1].qcHack = {controls:controls, targets:targets}
 		qcCheck(targets,controls,qubits)
-		r = math.multiply(r, ncGate(qubits, U, controls, targets))
+		ms.push(ncGate(qubits, U, controls, targets))
+	}
+	let r
+	if (which == 'qc') {
+		r = ms[0]
+		for (let i = 1; i < ms.length; i++) {
+			r = math.multiply(r, ms[i])
+		}
+	} else {
+		r = ms[ms.length-1]
+		for (let i = ms.length-2; i >= 0; i--) {
+			r = math.multiply(r, ms[i])
+		}
 	}
 	return r
 }
@@ -240,19 +260,19 @@ function eq() {
 }
 
 function eq1(a,b) {
+	math.compareNatural(a,b) // takes care of some checks
 	if (scalar(a) || scalar(b)) {
-		// compareNatural takes care of many checks
-		return math.compareNatural(a,b) == 0
+		let t = math.subtract(a,b)
+		let r = isclose(t,0)
+		return r
 	}
-	// compareNatural gets confused about array vs object
-	let r = true
-	let t = math.matrix(math.subtract(a,b))._data
-	t.forEach(function (value, index, matrix) {
-		value.forEach(function(v) {
-			if (!isclose(v,0)) { r = false }
-		})
-	})
-	return r
+	a = math.matrix(a)._data
+	b = math.matrix(b)._data
+	if (a.length != b.length) return false
+	for (let i = 0; i < a.length; i++) {
+		if (!eq1(a[i],b[i])) return false
+	}
+	return true
 }
 
 let ketmap = {
@@ -332,7 +352,7 @@ function scalar(x) {
 
 function isclose(a,b) {
 	const eps = 1e-14
-	return math.abs(a-b) < eps
+	return math.abs(math.subtract(a,b)) < eps
 }
 
 function mj(tex) {
@@ -390,6 +410,7 @@ const customFunctions = {
 	ketbra: ketbra,
 	eq: eq,
 	qc: qc,
+	qcc: qcc,
 	randomAngle: randomAngle,
 	randomState: randomState,
 	atToDotStarToKron: atToDotStarToKron,
@@ -404,6 +425,7 @@ const customFunctions = {
 }
 
 qc.rawArgs = true
+qcc.rawArgs = true
 
 customFunctions.ket.toTex = '\\left| ${args[0]} \\right\\rangle'
 customFunctions.bra.toTex = '\\left\\langle ${args[0]} \\right|'
@@ -411,6 +433,10 @@ customFunctions.ketbra.toTex = '\\left| ${args[0]} \\right\\rangle\\left\\langle
 customFunctions.braket.toTex = '\\left\\langle ${args[0]} | ${args[1]} \\right\\rangle'
 
 customFunctions.qc.toTex = function(node,options) {
+	return qcLatex(node, options)
+}
+
+customFunctions.qcc.toTex = function(node,options) {
 	return qcLatex(node, options)
 }
 
